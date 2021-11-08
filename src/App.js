@@ -6,7 +6,7 @@ function App() {
   const [year, setYear] = useState([]);
   const [email, setEmail] = useState([]);
   const [enteredBranch, setenteredBranch] = useState([]);
-  const [classes, setClasses] = useState([]);
+  const [classes, setClasses] = useState();
   const [classesData, setClassesData] = useState([]);
   const [section, setSection] = useState([]);
   const [sectionData, setSectionData] = useState([]);
@@ -15,8 +15,12 @@ function App() {
   const [areaD, setAreaD] = useState([]);
   const [selarea, setSelArea] = useState([]);
   const [subject, setSubject] = useState([]);
+  const [selSubj, setselSubj] = useState([]);
   const [typeD, setTypeD] = useState([]);
-  const [studD,setStudD] = useState([]);
+  const [studD,setStudD] = useState({ARows:[]});
+  const [filteredArea,setfilteredArea]= useState([]);
+  const [filteredSubj,setfilteredSubj]= useState([]);
+
 
   // const changeBranchHandler = (e) => {
   //   e.preventDefault();
@@ -72,18 +76,34 @@ function App() {
     });
   };
 
-  const getArea = (period) => {
+ 
+   const getArea = (period) => {
     const baseurl = `http://183.82.99.10/Ae-Erp-Api_DH/Assessment/GetAssessmentPeriodSubjects?UserMailId=${email}&AcademicYear=${year}&Branch=${enteredBranch}&AssessClass=${classes}&Section=${section}&Period=${period}`;
     axios.get(`${baseurl}`).then((res) => {
       console.log("selarea", res);
       setSelArea([...res.data]);
-    });
-  };
+      const obj = {};
+
+    for (let i = 0, len = res.data.length; i < len; i++) {
+      obj[res.data[i]["StudFee"]] = res.data[i];
+    }
+
+    let filteredArea = new Array();
+
+    for (const key in obj) {
+      filteredArea.push(obj[key]);
+      
+    }
+    console.log("filteredArea",filteredArea);
+    setfilteredArea(filteredArea);
+
+  });
+   }
 
   const getSubject = () => {
     const baseurl = `http://183.82.99.10/Ae-Erp-Api_DH/Assessment/GetAssessmentPeriodSubjects?UserMailId=${email}&AcademicYear=${year}&Branch=${enteredBranch}&AssessClass=${classes}&Section=${section}&Period=${period}`;
     axios.get(`${baseurl}`).then((res) => {
-      console.log("subj", res);
+      // console.log("subj", res);
       setSubject([...res.data]);
     
     });
@@ -100,11 +120,14 @@ function App() {
 
 
   const getStudD = (type) => {
-    const baseurl = `http://183.82.99.10/Ae-Erp-Api_DH/Assessment/GetAssessment?UserMailId=${email}&AcademicYear=${year}&Branch=${enteredBranch}&AssessClass=${classes}&Section=${section}&Period=${period}&Subject=${subject}&catg=${type}`;
+    console.log(email,year,enteredBranch,classes,section,typeD)
+    const baseurl = `http://183.82.99.10/Ae-Erp-Api_DH/Assessment/GetAssessment?UserMailId=${email}
+    &AcademicYear=${year}&Branch=${enteredBranch}&AssessClass=${classes}&Section=${section}
+    &Period=${period}&Subject=${selSubj}&catg=${type}`;
     axios.get(`${baseurl}`).then((res) => {
       
       console.log("StudD", res,studD);
-      // setStudD([...res.data]);
+       setStudD({...res.data});
     });
   };
 
@@ -158,10 +181,24 @@ function App() {
   };
 
   const handleAreaOnChange = (e) => {
+
+    let data = [...selarea];
+
+    let filteredSub = data.filter((data)=>{
+      return data.StudFee === e.target.value
+        })
+
+        console.log("filteredSub",filteredSub);
+
+        setfilteredSubj(filteredSub)
+
+
+
+
     console.log("area", e.target.value);
     // getArea(e.target.value);
-    getSubject(e.target.value)
-    getType(e.target.value)
+    // getSubject(e.target.value)
+    // getType(e.target.value)
   };
 
   const handleTypeOnChange = (e) => {
@@ -169,6 +206,32 @@ function App() {
     console.log("Type", e.target.value);
     getStudD(e.target.value);
   };
+
+  const handleSubjOnChange = (e) => {
+    setselSubj(e.target.value);
+    console.log("Type", e.target.value);
+    getType(e.target.value)
+    // getStudD(e.target.value);
+  };
+
+
+  const handleRefreshOnClick = (e) =>{
+    console.log("hitt");
+    e.preventDefault();
+    setClasses('')
+    setSection('')
+    setPeriod('')
+    // setAreaD('')
+
+  }
+
+  console.log("hit",studD);
+
+
+
+
+
+
 
   return (
     <div className="student">
@@ -198,7 +261,7 @@ function App() {
           </div>
           <div className="dropdown">
             <p id="conn">Class</p>
-            <select id="academic" onChange={(e) => handleClassOnChange(e)}>
+            <select id="academic" value={classes} onChange={(e) => handleClassOnChange(e)}>
             <option value="0">Select Class</option>
               {classesData.map((option) => (
                 <option value={option.U_VALUS}>{option.U_VALUS}</option>
@@ -208,7 +271,7 @@ function App() {
           <div className="dropdown">
             <p id="conn">Section</p>
             
-            <select id="academic" onChange={(e) => hadleSectionOnChange(e)}>
+            <select id="academic"  value={section} onChange={(e) => hadleSectionOnChange(e)}>
             <option value="0">Select Section</option>
               {sectionData.map((option) => (
                 <option value={option.U_VALUS}>{option.U_VALUS}</option>
@@ -217,7 +280,7 @@ function App() {
           </div>
           <div className="dropdown">
             <p id="conn">Assessment Cycle</p>
-            <select id="academic" onChange={(e) => hadlePeriodOnChange(e)}>
+            <select id="academic"  value={period} onChange={(e) => hadlePeriodOnChange(e)}>
             <option value="0">Select Assessment Cycle</option>
               {periodData.map((option) => (
                 <option value={option.U_VALUS}>{option.U_VALUS}</option>
@@ -228,18 +291,18 @@ function App() {
           
           <div className="dropdown">
             <p id="conn">Assessment Area</p>
-            <select id="academic" onChange={(e) => handleAreaOnChange(e)}>
+            <select id="academic"  onChange={(e) => handleAreaOnChange(e)}>
             <option value="0">Select Assessment Area</option>
-              {selarea.map((option) => (
+              {filteredArea.map((option) => (
                 <option value={option.StudFee}>{option.StudFee}</option>
               ))}
             </select>
           </div>
           <div className="dropdown">
             <p id="conn">Assessment Subject</p>
-            <select id="academic" onChange={(e) => handleAreaOnChange(e)}>
+            <select id="academic" onChange={(e) => handleSubjOnChange(e)}>
             <option value="0">Select Assessment Subject</option>
-              {selarea.map((option) => (
+              {filteredSubj.map((option) => (
                 <option value={option.U_VALUS}>{option.U_VALUS}</option>
               ))}
             </select>
@@ -258,12 +321,13 @@ function App() {
             <p id="conn">Students</p>
             <select id="academic" onChange={(e) => handleTypeOnChange(e)}>
               <option value="0">Select Student</option>
-              {studD.map((option) => (
-                <option value={option.U_VALUS}>{option.U_VALUS}</option>
+              {studD.ARows.map((option) => (
+                <option value={option['Student Name']}>{option['Student Name']}</option>
               ))}
             </select>
           </div>
           <form id="form1">
+          <button onClick={(e)=> handleRefreshOnClick(e)}>Refresh</button>
             <input id="btnad" type="submit" value="Search" />
           </form>
           
@@ -272,6 +336,7 @@ function App() {
       </div>
     </div>
   );
+
 }
 
 export default App;
